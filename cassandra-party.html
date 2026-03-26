@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cassandra's Bachelorette Trivia 💍</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#C9A84C;--gold-light:#F0D080;--blush:#E8C4B0;--deep:#140C08;--wine:#6B1E3C;--cream:#FAF3EC;--sage:#7A9E7E;--panel:rgba(255,255,255,0.04);--border:rgba(201,168,76,0.2)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--deep);color:var(--cream);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(201,168,76,.07) 0%,transparent 70%),radial-gradient(ellipse 50% 30% at 80% 80%,rgba(107,30,60,.1) 0%,transparent 70%);pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.hidden{display:none!important}
+/* typography */
+.title{font-family:'Playfair Display',serif;font-weight:900;background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--blush));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
+.divider{width:100px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto}
+.sub{font-size:.85rem;color:var(--blush);letter-spacing:.2em;text-transform:uppercase;opacity:.8}
+/* buttons */
+.gold-btn{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--deep);border:none;padding:14px 40px;font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;border-radius:50px;cursor:pointer;transition:all .25s;box-shadow:0 4px 20px rgba(201,168,76,.35);width:100%}
+.gold-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(201,168,76,.5)}
+.gold-btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+.ghost-btn{background:rgba(201,168,76,.12);border:1.5px solid rgba(201,168,76,.35);color:var(--gold-light);padding:11px 22px;border-radius:50px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .25s}
+.ghost-btn:hover{background:rgba(201,168,76,.22)}
+/* cards */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px 30px;backdrop-filter:blur(8px)}
+/* role select */
+#role-screen{text-align:center;max-width:480px;width:100%;animation:fadeUp .7s ease}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.role-card{background:var(--panel);border:1.5px solid var(--border);border-radius:18px;padding:26px 18px;cursor:pointer;transition:all .25s;text-align:center}
+.role-card:hover{background:rgba(201,168,76,.1);border-color:var(--gold);transform:translateY(-3px)}
+/* inputs */
+.big-input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;transition:border-color .25s;text-align:center;margin-bottom:14px}
+.big-input:focus{border-color:var(--gold)}
+.big-input::placeholder{color:rgba(250,243,236,.25)}
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:36px;margin:16px 0}
+.chip{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:50px;padding:5px 14px;font-size:.82rem;color:var(--gold-light);font-weight:600;animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+/* progress */
+.prog-wrap{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-bottom:20px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:2px;transition:width .6s ease}
+/* badge */
+.badge{display:inline-block;font-size:.68rem;padding:3px 12px;border-radius:20px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.b-mc{background:rgba(107,30,60,.5);color:#F5A0BA;border:1px solid rgba(245,160,186,.3)}
+.b-tb{background:rgba(122,158,126,.3);color:#A8D5AC;border:1px solid rgba(168,213,172,.3)}
+.b-oo{background:rgba(201,168,76,.2);color:var(--gold-light);border:1px solid rgba(201,168,76,.3)}
+.b-fb{background:rgba(100,80,180,.3);color:#C8B8FF;border:1px solid rgba(200,184,255,.3)}
+/* host options */
+.hq-opt{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:13px;padding:14px 16px;display:flex;align-items:center;gap:10px;font-size:.92rem;line-height:1.4;color:var(--cream);transition:all .35s}
+.hq-opt.rev-correct{background:rgba(122,158,126,.25);border-color:var(--sage);color:#A8D5AC}
+.hq-opt.rev-wrong{opacity:.35}
+.opt-letter{width:26px;height:26px;border-radius:50%;background:rgba(201,168,76,.18);color:var(--gold-light);font-weight:700;font-size:.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .35s}
+.rev-correct .opt-letter{background:var(--sage);color:var(--deep)}
+/* player options */
+.pa-opt{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:13px;padding:14px 16px;display:flex;align-items:center;gap:10px;font-size:.9rem;line-height:1.4;color:var(--cream);cursor:pointer;transition:all .25s;text-align:left;font-family:'DM Sans',sans-serif;width:100%}
+.pa-opt:hover:not(:disabled){background:rgba(201,168,76,.14);border-color:var(--gold);transform:translateX(3px)}
+.pa-opt:disabled{cursor:default}
+.pa-opt.locked-sel{background:rgba(201,168,76,.2);border-color:var(--gold)}
+.pa-opt.locked-dim{opacity:.35}
+.pa-opt.rev-c{background:rgba(122,158,126,.3);border-color:var(--sage);color:#A8D5AC}
+.pa-opt.rev-w{background:rgba(200,60,60,.2);border-color:#E05050;color:#FFB0B0;opacity:.8}
+.pa-opt.rev-d{opacity:.35}
+/* feedback */
+.fb-box{text-align:center;padding:16px;border-radius:14px;margin-top:16px;animation:fadeUp .35s ease}
+.fb-locked{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25)}
+.fb-right{background:rgba(122,158,126,.2);border:1px solid rgba(122,158,126,.35)}
+.fb-wrong{background:rgba(200,60,60,.15);border:1px solid rgba(200,60,60,.3)}
+/* story */
+.story-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-top:18px;animation:fadeUp .4s ease}
+.story-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);font-weight:600;margin-bottom:6px}
+/* leaderboard */
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.lb-row:last-child{border-bottom:none}
+.lb-bar-wrap{width:70px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.lb-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:2px;transition:width .6s}
+/* podium */
+.podium-block{border-radius:10px 10px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;min-width:80px}
+.p-first{height:110px;background:linear-gradient(180deg,rgba(255,215,0,.3),rgba(255,215,0,.1));border:1px solid rgba(255,215,0,.4)}
+.p-second{height:84px;background:linear-gradient(180deg,rgba(192,192,192,.25),rgba(192,192,192,.08));border:1px solid rgba(192,192,192,.35)}
+.p-third{height:64px;background:linear-gradient(180deg,rgba(205,127,50,.25),rgba(205,127,50,.08));border:1px solid rgba(205,127,50,.35)}
+/* pulse */
+.pulse-wrap{margin-top:24px}.pulse-wrap span{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin:0 3px;animation:pulse 1.4s ease-in-out infinite}
+.pulse-wrap span:nth-child(2){animation-delay:.2s}.pulse-wrap span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+/* confetti */
+.cdot{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:999;animation:cfall 1.3s ease-out forwards}
+@keyframes cfall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+/* screens */
+#name-screen,#waiting-host-screen,#waiting-player-screen,#host-q-screen,#player-q-screen,#end-screen{width:100%;max-width:820px;animation:fadeUp .5s ease}
+#name-screen,#waiting-host-screen,#waiting-player-screen,#end-screen{max-width:500px}
+#player-q-screen{max-width:480px}
+/* setup screen */
+#setup-screen{text-align:center;max-width:520px;width:100%;animation:fadeUp .6s ease}
+.setup-step{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;text-align:left}
+.step-num{display:inline-block;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--deep);font-weight:700;font-size:.8rem;text-align:center;line-height:26px;margin-right:10px;flex-shrink:0}
+code{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.25);border-radius:6px;padding:2px 8px;font-size:.85rem;color:var(--gold-light);font-family:monospace;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ROLE SELECT -->
+  <div id="role-screen">
+    <div style="font-size:3.5rem;margin-bottom:10px">💍</div>
+    <div class="title" style="font-size:clamp(1.8rem,5vw,3rem)">Cassandra's<br>Bachelorette Trivia</div>
+    <div class="divider"></div>
+    <div class="sub" style="margin-bottom:32px">Who knows her best?</div>
+    <div class="role-grid">
+      <div class="role-card" onclick="chooseRole('host')">
+        <div style="font-size:2.2rem;margin-bottom:10px">🖥️</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:4px">Host</div>
+        <div style="font-size:.76rem;color:rgba(250,243,236,.5);line-height:1.4">Controls the game on the big screen</div>
+      </div>
+      <div class="role-card" onclick="chooseRole('player')">
+        <div style="font-size:2.2rem;margin-bottom:10px">📱</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:4px">Player</div>
+        <div style="font-size:.76rem;color:rgba(250,243,236,.5);line-height:1.4">Answer questions from your phone</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP (host enters bin ID or creates one) -->
+  <div id="setup-screen" class="hidden">
+    <div style="font-size:2.5rem;margin-bottom:12px">⚙️</div>
+    <div class="title" style="font-size:2rem;margin-bottom:6px">First-time setup</div>
+    <div class="divider"></div>
+    <p style="color:rgba(250,243,236,.6);font-size:.9rem;margin-bottom:24px;line-height:1.7">
+      This game uses a free <strong style="color:var(--gold-light)">JSONBin</strong> account to sync between phones.<br>Takes 2 minutes, one time only.
+    </p>
+    <div class="setup-step">
+      <div style="display:flex;align-items:flex-start;gap:0">
+        <span class="step-num">1</span>
+        <div>
+          <strong>Go to</strong> <a href="https://jsonbin.io" target="_blank" style="color:var(--gold-light)">jsonbin.io</a> → sign up free → click <strong>"+ New Bin"</strong><br>
+          <span style="font-size:.82rem;color:rgba(250,243,236,.5)">Paste in: <code>{}</code> and click Create</span>
+        </div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div style="display:flex;align-items:flex-start;gap:0">
+        <span class="step-num">2</span>
+        <div>
+          Copy your <strong>Bin ID</strong> (looks like <code>6650abc123...</code>) and your <strong>API key</strong> from Account → API Keys
+        </div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div style="display:flex;align-items:flex-start;gap:0">
+        <span class="step-num">3</span>
+        <div style="width:100%">
+          Paste them here:
+          <input class="big-input" id="setup-binid" placeholder="Bin ID" style="margin-top:10px;margin-bottom:8px" />
+          <input class="big-input" id="setup-apikey" placeholder="API Key (Master or Access Key)" style="margin-bottom:0" />
+        </div>
+      </div>
+    </div>
+    <button class="gold-btn" style="margin-top:16px" onclick="saveSetup()">Save & Continue →</button>
+    <p style="font-size:.75rem;color:rgba(250,243,236,.3);margin-top:14px">Your credentials are saved in this browser only and never leave your device.</p>
+  </div>
+
+  <!-- NAME ENTRY (player) -->
+  <div id="name-screen" class="hidden" style="text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;margin-bottom:6px">What's your name?</div>
+    <div style="font-size:.9rem;color:rgba(250,243,236,.55);margin-bottom:28px">This is how you'll appear on the leaderboard ✨</div>
+    <input class="big-input" id="player-name-input" type="text" maxlength="20" placeholder="Your name..."
+      onkeydown="if(event.key==='Enter')joinGame()" oninput="document.getElementById('join-btn').disabled=!this.value.trim()" />
+    <button class="gold-btn" id="join-btn" onclick="joinGame()" disabled>Join Game →</button>
+    <div id="name-error" style="color:#F5A0BA;font-size:.85rem;margin-top:12px;display:none"></div>
+  </div>
+
+  <!-- WAITING ROOM (host) -->
+  <div id="waiting-host-screen" class="hidden" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:12px">🥂</div>
+    <div class="title" style="font-size:clamp(1.6rem,4vw,2.5rem)">Waiting Room</div>
+    <div class="divider"></div>
+    <p style="font-size:.95rem;color:rgba(250,243,236,.6);margin-bottom:6px;line-height:1.7">
+      Send everyone this link and have them tap <strong style="color:var(--gold-light)">Player</strong>!
+    </p>
+    <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:10px 16px;margin-bottom:20px;word-break:break-all">
+      <code id="share-url" style="font-size:.8rem;color:var(--gold-light)"></code>
+    </div>
+    <div class="chips" id="waiting-chips"></div>
+    <button class="gold-btn" id="start-btn" onclick="hostStartGame()">Start Game ✨</button>
+  </div>
+
+  <!-- WAITING (player) -->
+  <div id="waiting-player-screen" class="hidden" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:14px">⏳</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700" id="player-waiting-title">You're in!</div>
+    <p style="color:rgba(250,243,236,.5);margin-top:8px;font-size:.9rem">Waiting for the host to start...</p>
+    <div class="pulse-wrap"><span></span><span></span><span></span></div>
+    <div class="chips" id="player-waiting-chips" style="margin-top:20px"></div>
+  </div>
+
+  <!-- HOST QUESTION -->
+  <div id="host-q-screen" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:.78rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;font-weight:600" id="hq-qnum">Q 1 / 19</span>
+      <span style="font-size:.78rem;color:rgba(250,243,236,.5)" id="hq-ans-count">0 answered</span>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="hq-prog"></div></div>
+    <div class="card" style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.6rem;margin-bottom:12px" id="hq-emoji"></div>
+      <div class="badge" id="hq-badge"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:clamp(1.15rem,2.5vw,1.6rem);font-weight:700;line-height:1.45" id="hq-question"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px" id="hq-opts"></div>
+    <div style="font-size:.85rem;color:rgba(250,243,236,.5);text-align:center;margin-bottom:18px">
+      <span id="hq-n-answered">0</span> / <span id="hq-n-total">0</span> answered
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="ghost-btn" onclick="hostReveal()">Reveal Answer 👁</button>
+      <button class="ghost-btn" onclick="hostToggleStory()">Story Time 📖</button>
+      <button class="gold-btn" style="width:auto;padding:12px 26px" onclick="hostNext()">Next →</button>
+    </div>
+    <div id="hq-story" class="story-box hidden">
+      <div class="story-lbl">✦ The Full Story</div>
+      <div style="font-size:.9rem;line-height:1.65" id="hq-story-text"></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--gold-light)">🏆 Leaderboard</div>
+      <div id="hq-lb"></div>
+    </div>
+  </div>
+
+  <!-- PLAYER QUESTION -->
+  <div id="player-q-screen" class="hidden">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--gold-light)" id="pq-name"></div>
+      <div style="font-size:.75rem;color:rgba(250,243,236,.45);letter-spacing:.15em;text-transform:uppercase;margin-top:4px" id="pq-qnum">Q 1 / 19</div>
+    </div>
+    <div class="card" style="text-align:center;margin-bottom:18px">
+      <div style="font-size:2rem;margin-bottom:10px" id="pq-emoji"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:clamp(1rem,3vw,1.2rem);font-weight:700;line-height:1.5" id="pq-question"></div>
+      <div id="pq-blank-area" class="hidden" style="margin-top:14px">
+        <input class="big-input" id="pq-blank" type="text" placeholder="Type your answer..." style="margin-bottom:10px" />
+        <button class="gold-btn" style="padding:12px" onclick="submitBlank()">Submit</button>
+      </div>
+    </div>
+    <div style="display:grid;gap:10px" id="pq-opts"></div>
+    <div id="pq-feedback" class="hidden"></div>
+    <div id="pq-waiting" class="hidden" style="text-align:center;padding:20px;color:rgba(250,243,236,.4);font-size:.88rem">
+      <div class="pulse-wrap"><span></span><span></span><span></span></div>
+      <div style="margin-top:8px">Waiting for host...</div>
+    </div>
+    <div id="pq-story" class="story-box hidden">
+      <div class="story-lbl">✦ The Full Story</div>
+      <div style="font-size:.88rem;line-height:1.65" id="pq-story-text"></div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div id="end-screen" class="hidden" style="text-align:center">
+    <div style="font-size:4.5rem;animation:float 3s ease-in-out infinite;display:block;margin-bottom:8px">🏆</div>
+    <div class="title" style="font-size:clamp(2rem,5vw,3rem)">Final Results!</div>
+    <div class="sub" style="margin:8px 0 24px">Bachelorette Trivia • Cassandra 💍</div>
+    <div style="display:flex;align-items:flex-end;justify-content:center;gap:12px;margin:24px 0 28px" id="end-podium"></div>
+    <div class="card" style="margin-bottom:24px">
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--gold-light)">🏆 Full Rankings</div>
+      <div id="end-lb"></div>
+    </div>
+    <button class="ghost-btn" onclick="resetGame()">Play Again 🔄</button>
+  </div>
+
+</div>
+<style>@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}</style>
+<script>
+// ─────────────────────────────────────────────
+//  QUESTIONS
+// ─────────────────────────────────────────────
+const Q = [
+  {type:"mc",emoji:"📱",q:"How did Cassandra and Natalie first meet?",opts:["Through mutual friends at a party","At a soccer game","On Hinge in April 2022","In law school orientation"],a:2,reveal:"They matched on Hinge in April 2022. Cassandra was 25, studying for a big exam, and radiating serious cool girl energy. Natalie was immediately obsessed. Obviously."},
+  {type:"mc",emoji:"⚽",q:"What was Natalie's secret nickname for Cassandra before they met in person?",opts:["25 year old / LSAT girl","The soccer girl / athlete","The law school one / future lawyer","The cool one / mystery woman"],a:0,reveal:"Natalie called her 'my 25 year old' or 'LSAT girl.' She was giving big cool girl energy AND knew a lot about soccer. Natalie was smitten from the start."},
+  {type:"mc",emoji:"🌅",q:"Where was their official first date?",opts:["A rooftop bar in San Diego","A sushi restaurant in LA","Hiking trail at sunrise","Raising Cane's on the beach watching the sunset"],a:3,reveal:"Natalie convinced Cassandra — the day AFTER her LSAT — to drive 2 hours to LA and spend the night. They played games, had drinks and snacks, and Natalie had to be up at 6am for soccer. The next day: Raising Cane's on the beach, music, and a sunset. Natalie thought it was her 'super secret special spot.' 🐔🌊"},
+  {type:"tb",emoji:"💤",q:"True or False: Natalie slept on the couch on their first overnight together.",opts:["True — total gentleman","False — she did NOT sleep on the couch"],a:1,reveal:"She offered! She was a gentleman and offered to sleep on the couch. Key word: offered. Twin bed for the win. 😏"},
+  {type:"mc",emoji:"🔥",q:"What moment made Natalie fall in love with Cassandra?",opts:["When she surprised her with concert tickets she'd bought weeks in advance","When she lit a match and put it out with her tongue on a night out","When she drove two hours just to bring Natalie dinner after a long day","When she scored the winning goal at a soccer game Natalie attended"],a:1,reveal:"Cassandra lit a match and put it out with her tongue after a night out. Natalie was so moved she now has a match tattoo. That is LOVE, people."},
+  {type:"mc",emoji:"💬",q:"Where did Natalie ask Cassandra to be her girlfriend?",opts:["Via a handwritten letter slipped under her apartment door","At halftime of a soccer game in front of the whole team","Over a candlelit dinner she'd planned for weeks","In a line outside a bar, about 2 weeks after they first met up"],a:3,reveal:"She popped the question in a line outside a bar — approximately 2 weeks after they first met. Natalie had also already told Cassandra on their second date that she deleted her dating apps. Cassandra replied: 'Cool bro, that's crazy.' 😂"},
+  {type:"mc",emoji:"💕",q:"Natalie said 'I love you' first. How long did Cassandra make her wait before saying it back?",opts:["She said it back immediately the same night","She said it back after about a week or two","She made Natalie wait a full month","She wrote it in a card instead of saying it out loud"],a:1,reveal:"Natalie said it 100% first. Cassandra made her wait 1–2 weeks. Natalie described this as 'a long wait for me.' The suspense! 💀"},
+  {type:"mc",emoji:"💍",q:"What fake excuse did Natalie use to set up the surprise proposal?",opts:["A soccer team reunion dinner in LA","A friend's birthday wine tasting in Malibu","A charity gala for her soccer league","A farewell party for a teammate moving abroad"],a:0,reveal:"Natalie said they were going to a 'soccer formal reunion in LA.' Both families hid in a bush on the beach. Her family ran late, so Natalie had to take the longest route with 10 wrong turns to stall. Iconic, chaotic, perfect."},
+  {type:"mc",emoji:"🎵",q:"What is Cassandra and Natalie's song?",opts:["Iris by Goo Goo Dolls","Written in the Sand by Old Dominion","Golden Hour by Kacey Musgraves","Springsteen by Eric Church"],a:3,reveal:"'Springsteen' by Eric Church — the first song they danced to on the beach! Their wedding song will be 'Iris' by the Goo Goo Dolls. 🎸"},
+  {type:"mc",emoji:"🌍",q:"What is Cassandra and Natalie's favorite travel memory together?",opts:["Exploring the Amalfi Coast on a spontaneous road trip","Getting engaged on the beach in SoCal","Going out in Galway, Ireland","Rafting down a river in Thailand"],a:2,reveal:"Going out in Galway, Ireland takes the top spot! Though rafting down a river in Thailand (with 'pee pee parasites') and escaping on a cargo boat back to mainland are very close contenders. These two do NOT travel boringly."},
+  {type:"mc",emoji:"☕",q:"What is Cassandra's go-to coffee order — and what does she always forget?",opts:["Vanilla iced coffee — forgets the sweetener","Dirty chai — forgets extra espresso","Oat latte — forgets to ask for oat milk","Black cold brew — forgets no ice"],a:2,reveal:"An oat latte — but she always forgets to ask for oat milk. She also loves the occasional PSL or matcha. A woman of range and selective memory. 🍂🍵"},
+  {type:"mc",emoji:"🎬",q:"What is Cassandra's favorite movie?",opts:["Harry Potter & the Goblet of Fire","Braveheart","Pride & Prejudice","The Notebook"],a:1,reveal:"BRAVEHEART. Natalie's documented reaction: 'NERDDDDDD.' We love a woman who appreciates Mel Gibson screaming FREEDOM through the Scottish Highlands. 🏴󠁧󠁢󠁳󠁣󠁴󠁿"},
+  {type:"oo",emoji:"🌙",q:"Morning person or night owl?",opts:["Morning person 🌅","Night owl 🦉"],a:1,reveal:"Certified night owl — not a morning person in any way. Natalie handles morning duties (breakfast, coffee) while Cassandra eases into consciousness at her own pace. It's a whole system and it works."},
+  {type:"mc",emoji:"🫀",q:"Cassandra has a surprising medical fact about her body. What is it?",opts:["She has an extra rib on her left side","She has no gallbladder","She was born with two spleens","She has a duplicate kidney"],a:1,reveal:"No gallbladder! She also couldn't read until age 6, hiked Machu Picchu on a broken ankle, and is a speed reader. Cassandra contains multitudes. Do not underestimate her."},
+  {type:"mc",emoji:"😬",q:"What happened to Cassandra on her FIRST day at her fashion job in LA?",opts:["She forgot her badge and got locked out until noon","She called her boss by the wrong name in a company-wide email","She spilled an entire coffee on her outfit right before a meeting","She pooped her pants in the parking lot on the way in"],a:3,reveal:"The coffee hit her tummy on the way to work. She made it to the parking lot. That was it. She went inside, cleaned up, threw away the evidence, and WENT IN AND DID HER JOB. Not all heroes wear capes. 👏"},
+  {type:"fb",emoji:"🤫",q:"What does 'TWOB' stand for — one of Cassandra & Natalie's inside jokes?",a_text:"the whore of babylon",reveal:"The Whore of Babylon! Nobody outside this couple fully knows the context. Other certified inside jokes: 'BWAGA' and 'One small fly pls.' Truly unhinged couple behavior and we respect every bit of it."},
+  {type:"mc",emoji:"🧳",q:"How did Cassandra and Natalie take their first trip to Europe together?",opts:["They saved up and booked it as a one-year anniversary trip","Natalie invited herself on the Fernandez family vacation to Europe","They won a travel contest through Natalie's soccer league","Cassandra's family surprised them both with the tickets as a gift"],a:1,reveal:"Natalie's exact words: 'I invited myself on the Fernandez fam vacation.' Just casually tagged along on Cassandra's family trip to Europe. They've also been back during Cassandra's law school study abroad — and the honeymoon is still to come. 🇪🇺"},
+  {type:"mc",emoji:"📚",q:"What is Cassandra's guilty pleasure AND her go-to stress relief?",opts:["Reading smut novels until 2 or 3am on her Kindle","Online shopping for things she doesn't need at midnight","Rewatching the same comfort TV show from the beginning","Stress-baking elaborate desserts at odd hours"],a:0,reveal:"She reads until ungodly hours — smut specifically when stressed. Her Kindle is genuinely irreplaceable. Pre-bed routine: get in bed, do 'review' (scroll all the TikToks/Reels they sent each other), then shush Natalie to sleep for quiet reading time. ✨"},
+  {type:"mc",emoji:"🌟",q:"What is Cassandra's secret hidden talent?",opts:["Impressionist painter — she produces eerily accurate portraits from memory","Lyrical genius — her made-up songs and raps always genuinely slap","Competitive memorizer — she can recite entire books she's read once","Sommelier-level palate — she identifies wine varieties blind"],a:1,reveal:"Lowkey lyrical genius! Natalie says her made-up songs and raps always hit SO hard. She's basically a walking hit machine — it just never gets recorded. Someone get this woman a studio session."},
+  {type:"mc",emoji:"🌸",q:"What is Cassandra's dream future business?",opts:["A boutique coastal hotel with a curated library in every room","A coffee shop that is also a bookshop","A wellness retreat combining yoga, spa treatments, and guided reading","A members-only supper club with a rotating literary theme"],a:1,reveal:"A coffee shop that is ALSO a bookshop. Plus running a med spa. She will absolutely do both simultaneously. A woman with vision AND execution energy. ☕📚💅"},
+];
+
+// ─────────────────────────────────────────────
+//  CONFIG — filled in at setup or loaded from localStorage
+// ─────────────────────────────────────────────
+let BIN_ID = localStorage.getItem('bach_bin_id') || '';
+let API_KEY = localStorage.getItem('bach_api_key') || '';
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let myRole = null;
+let myName = '';
+let pollTimer = null;
+let lastQIndex = -1;
+let hasAnswered = false;
+let hasShownReveal = false;
+
+const defaultState = () => ({
+  phase: 'lobby',       // lobby | question | ended
+  qIndex: 0,
+  revealed: false,
+  storyOpen: false,
+  roster: {},           // { name: true }
+  answers: {}           // { "name__qIdx": value }
+});
+
+// ─────────────────────────────────────────────
+//  JSONBIN API  (all cross-device sync goes here)
+// ─────────────────────────────────────────────
+async function readState() {
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function writeState(state) {
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+      body: JSON.stringify(state)
+    });
+  } catch {}
+}
+
+// Safe read-modify-write for players (retries to avoid clobbering)
+async function patchState(fn) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const s = await readState();
+    if (!s) return;
+    const next = fn(JSON.parse(JSON.stringify(s)));
+    if (next) await writeState(next);
+    return;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SCORING
+// ─────────────────────────────────────────────
+function isBlankCorrect(val) {
+  const v = String(val).toLowerCase().replace(/[^a-z\s]/g,'');
+  return v.includes('whore') && v.includes('babylon');
+}
+
+function computeScores(state) {
+  const scores = {};
+  Object.keys(state.roster || {}).forEach(n => { scores[n] = 0; });
+  Object.entries(state.answers || {}).forEach(([key, val]) => {
+    const sep = key.indexOf('__');
+    if (sep < 0) return;
+    const name = key.slice(0, sep);
+    const qi = parseInt(key.slice(sep + 2));
+    if (isNaN(qi) || qi >= Q.length) return;
+    const q = Q[qi];
+    const correct = q.type === 'fb' ? isBlankCorrect(val) : val === q.a;
+    if (correct && name in scores) scores[name]++;
+  });
+  return scores;
+}
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+function show(id) {
+  ['role-screen','setup-screen','name-screen','waiting-host-screen','waiting-player-screen',
+   'host-q-screen','player-q-screen','end-screen']
+    .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+}
+
+function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+function startPoll(fn, ms=2000) { stopPoll(); fn(); pollTimer = setInterval(fn, ms); }
+
+function spawnConfetti(n=22) {
+  const colors = ['#C9A84C','#F0D080','#E8C4B0','#F5A0BA','#A8D5AC','#C8B8FF'];
+  for (let i=0; i<n; i++) setTimeout(() => {
+    const d = document.createElement('div');
+    d.className = 'cdot';
+    d.style.cssText = `left:${Math.random()*100}vw;top:-10px;background:${colors[~~(Math.random()*colors.length)]};animation-duration:${.8+Math.random()*.9}s;animation-delay:${Math.random()*.3}s`;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 2200);
+  }, i*28);
+}
+
+function renderLB(scores, containerId) {
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0]?.[1] || 1;
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById(containerId).innerHTML = sorted.length
+    ? sorted.map(([name,score],i) => `
+      <div class="lb-row">
+        <div style="width:22px;text-align:center;font-size:${i<3?.85:.75}rem;color:${i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'rgba(250,243,236,.4)'};font-weight:700">${medals[i]||i+1}</div>
+        <div style="flex:1;font-size:.9rem;font-weight:600">${name}</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${Math.round(score/max*100)}%"></div></div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--gold-light)">${score}</div>
+      </div>`).join('')
+    : '<div style="color:rgba(250,243,236,.35);font-size:.85rem;text-align:center;padding:8px">No players yet</div>';
+}
+
+// ─────────────────────────────────────────────
+//  ROLE SELECT
+// ─────────────────────────────────────────────
+async function chooseRole(r) {
+  myRole = r;
+  if (!BIN_ID || !API_KEY) { show('setup-screen'); return; }
+  if (r === 'host') startHost();
+  else show('name-screen');
+}
+
+// ─────────────────────────────────────────────
+//  SETUP
+// ─────────────────────────────────────────────
+function saveSetup() {
+  BIN_ID = document.getElementById('setup-binid').value.trim();
+  API_KEY = document.getElementById('setup-apikey').value.trim();
+  if (!BIN_ID || !API_KEY) { alert('Please fill in both fields.'); return; }
+  localStorage.setItem('bach_bin_id', BIN_ID);
+  localStorage.setItem('bach_api_key', API_KEY);
+  if (myRole === 'host') startHost();
+  else show('name-screen');
+}
+
+// ─────────────────────────────────────────────
+//  HOST FLOW
+// ─────────────────────────────────────────────
+async function startHost() {
+  await writeState(defaultState());
+  document.getElementById('share-url').textContent = window.location.href;
+  show('waiting-host-screen');
+  startPoll(pollHostLobby);
+}
+
+async function pollHostLobby() {
+  const s = await readState();
+  if (!s) return;
+  const names = Object.keys(s.roster || {});
+  document.getElementById('waiting-chips').innerHTML = names.map(n=>`<span class="chip">${n}</span>`).join('');
+  document.getElementById('start-btn').textContent = `Start Game ✨${names.length ? `  (${names.length} joined)` : ''}`;
+}
+
+async function hostStartGame() {
+  const s = await readState();
+  if (!s) return;
+  s.phase = 'question'; s.qIndex = 0; s.revealed = false; s.storyOpen = false;
+  await writeState(s);
+  stopPoll();
+  loadHostQ(s);
+}
+
+function loadHostQ(s) {
+  show('host-q-screen');
+  lastQIndex = s.qIndex;
+  const q = Q[s.qIndex];
+  const letters = ['A','B','C','D'];
+  const badgeClass = {mc:'b-mc',tb:'b-tb',oo:'b-oo',fb:'b-fb'};
+  const badgeLabel = {mc:'Multiple Choice',tb:'True or False',oo:'This or That',fb:'Fill in the Blank'};
+
+  document.getElementById('hq-qnum').textContent = `Question ${s.qIndex+1} of ${Q.length}`;
+  document.getElementById('hq-prog').style.width = (s.qIndex/Q.length*100)+'%';
+  document.getElementById('hq-emoji').textContent = q.emoji;
+  document.getElementById('hq-badge').textContent = badgeLabel[q.type];
+  document.getElementById('hq-badge').className = 'badge '+badgeClass[q.type];
+  document.getElementById('hq-question').textContent = q.q;
+  document.getElementById('hq-story-text').textContent = q.reveal;
+  document.getElementById('hq-story').classList.toggle('hidden', !s.storyOpen);
+
+  const optsEl = document.getElementById('hq-opts');
+  optsEl.innerHTML = '';
+  if (q.type !== 'fb' && q.opts) {
+    optsEl.style.gridTemplateColumns = q.opts.length > 2 ? '1fr 1fr' : '1fr';
+    q.opts.forEach((opt,i) => {
+      const d = document.createElement('div');
+      d.className = 'hq-opt' + (s.revealed ? (i===q.a?' rev-correct':' rev-wrong') : '');
+      d.id = `hq-opt-${i}`;
+      d.innerHTML = `<span class="opt-letter">${letters[i]}</span>${opt}`;
+      optsEl.appendChild(d);
+    });
+  } else {
+    optsEl.style.gridTemplateColumns = '1fr';
+  }
+
+  startPoll(pollHostQ);
+}
+
+async function pollHostQ() {
+  const s = await readState();
+  if (!s) return;
+  const roster = s.roster || {};
+  const answers = s.answers || {};
+  const total = Object.keys(roster).length;
+  const answered = Object.keys(roster).filter(n => `${n}__${s.qIndex}` in answers).length;
+  document.getElementById('hq-ans-count').textContent = `${answered}/${total} answered`;
+  document.getElementById('hq-n-answered').textContent = answered;
+  document.getElementById('hq-n-total').textContent = total;
+  renderLB(computeScores(s), 'hq-lb');
+  if (s.revealed) applyRevealUI(s.qIndex);
+  document.getElementById('hq-story').classList.toggle('hidden', !s.storyOpen);
+  if (s.phase === 'ended') { stopPoll(); showEnd(s); }
+}
+
+function applyRevealUI(qi) {
+  const q = Q[qi];
+  if (!q.opts) return;
+  q.opts.forEach((_,i) => {
+    const el = document.getElementById(`hq-opt-${i}`);
+    if (!el) return;
+    el.className = 'hq-opt ' + (i===q.a ? 'rev-correct' : 'rev-wrong');
+  });
+}
+
+async function hostReveal() {
+  await patchState(s => { s.revealed = true; return s; });
+  const s = await readState();
+  if (s) applyRevealUI(s.qIndex);
+}
+
+async function hostToggleStory() {
+  await patchState(s => { s.storyOpen = !s.storyOpen; return s; });
+}
+
+async function hostNext() {
+  const s = await readState();
+  if (!s) return;
+  const next = s.qIndex + 1;
+  stopPoll();
+  if (next >= Q.length) {
+    s.phase = 'ended'; await writeState(s); showEnd(s);
+  } else {
+    s.qIndex = next; s.revealed = false; s.storyOpen = false;
+    await writeState(s); loadHostQ(s);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  PLAYER FLOW
+// ─────────────────────────────────────────────
+async function joinGame() {
+  myName = document.getElementById('player-name-input').value.trim();
+  if (!myName) return;
+  const s = await readState();
+  const errEl = document.getElementById('name-error');
+  if (!s) { errEl.textContent = 'Could not connect. Check your link or ask the host.'; errEl.style.display='block'; return; }
+  if (s.phase !== 'lobby') { errEl.textContent = 'Game already started! Ask the host to reset for a new round.'; errEl.style.display='block'; return; }
+  await patchState(st => { st.roster = st.roster||{}; st.roster[myName] = true; return st; });
+  document.getElementById('player-waiting-title').textContent = `You're in, ${myName}! 🎉`;
+  show('waiting-player-screen');
+  startPoll(pollPlayerLobby);
+}
+
+async function pollPlayerLobby() {
+  const s = await readState();
+  if (!s) return;
+  const names = Object.keys(s.roster||{});
+  document.getElementById('player-waiting-chips').innerHTML = names.map(n =>
+    `<span class="chip" style="${n===myName?'border-color:var(--gold);color:var(--gold-light)':''}">${n===myName?'★ '+n:n}</span>`
+  ).join('');
+  if (s.phase === 'question') { stopPoll(); loadPlayerQ(s); }
+}
+
+function loadPlayerQ(s) {
+  show('player-q-screen');
+  hasAnswered = false; hasShownReveal = false;
+  lastQIndex = s.qIndex;
+  const q = Q[s.qIndex];
+  const letters = ['A','B','C','D'];
+
+  document.getElementById('pq-name').textContent = myName;
+  document.getElementById('pq-qnum').textContent = `Question ${s.qIndex+1} of ${Q.length}`;
+  document.getElementById('pq-emoji').textContent = q.emoji;
+  document.getElementById('pq-question').textContent = q.q;
+  document.getElementById('pq-feedback').className = 'hidden';
+  document.getElementById('pq-feedback').innerHTML = '';
+  document.getElementById('pq-waiting').classList.add('hidden');
+  document.getElementById('pq-story').classList.add('hidden');
+
+  const blankArea = document.getElementById('pq-blank-area');
+  const optsEl = document.getElementById('pq-opts');
+  optsEl.innerHTML = '';
+
+  if (q.type === 'fb') {
+    blankArea.classList.remove('hidden');
+    const inp = document.getElementById('pq-blank');
+    inp.value = ''; inp.disabled = false;
+    inp.style.borderColor = ''; inp.style.background = '';
+    const old = document.getElementById('blank-hint');
+    if (old) old.remove();
+  } else {
+    blankArea.classList.add('hidden');
+    const twoCol = q.opts.length > 2 && q.type !== 'tb';
+    optsEl.style.gridTemplateColumns = twoCol ? '1fr 1fr' : '1fr';
+    q.opts.forEach((opt,i) => {
+      const btn = document.createElement('button');
+      btn.className = 'pa-opt'; btn.id = `pq-opt-${i}`;
+      btn.innerHTML = `<span style="width:24px;height:24px;border-radius:50%;background:rgba(201,168,76,.18);color:var(--gold-light);font-weight:700;font-size:.73rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${letters[i]}</span>${opt}`;
+      btn.onclick = () => submitAnswer(i);
+      optsEl.appendChild(btn);
+    });
+  }
+  startPoll(pollPlayerQ);
+}
+
+async function submitAnswer(idx) {
+  if (hasAnswered) return;
+  hasAnswered = true;
+  await patchState(s => { s.answers = s.answers||{}; s.answers[`${myName}__${s.qIndex}`] = idx; return s; });
+  showLocked(idx);
+}
+
+async function submitBlank() {
+  if (hasAnswered) return;
+  const val = document.getElementById('pq-blank').value.trim();
+  if (!val) return;
+  hasAnswered = true;
+  document.getElementById('pq-blank').disabled = true;
+  await patchState(s => { s.answers = s.answers||{}; s.answers[`${myName}__${s.qIndex}`] = val; return s; });
+  showLocked(null);
+}
+
+function showLocked(idx) {
+  document.querySelectorAll('.pa-opt').forEach((btn,i) => {
+    btn.disabled = true;
+    btn.className = 'pa-opt ' + (i===idx ? 'locked-sel' : 'locked-dim');
+  });
+  const fb = document.getElementById('pq-feedback');
+  fb.className = 'fb-box fb-locked';
+  fb.innerHTML = `<div style="font-size:1.8rem;margin-bottom:6px">🔒</div><div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700">Answer locked in!</div><div style="font-size:.82rem;color:rgba(250,243,236,.55);margin-top:4px">Waiting for the host to reveal...</div>`;
+  document.getElementById('pq-waiting').classList.remove('hidden');
+}
+
+function showReveal(myAnswer, q) {
+  if (q.type !== 'fb') {
+    document.querySelectorAll('.pa-opt').forEach((btn,i) => {
+      btn.className = 'pa-opt ' + (i===q.a ? 'rev-c' : i===myAnswer && i!==q.a ? 'rev-w' : 'rev-d');
+    });
+  } else {
+    const inp = document.getElementById('pq-blank');
+    const correct = inp && isBlankCorrect(inp.value);
+    if (inp) { inp.style.borderColor = correct?'var(--sage)':'#E05050'; inp.style.background = correct?'rgba(122,158,126,.2)':'rgba(200,60,60,.15)'; }
+    if (!correct && !document.getElementById('blank-hint')) {
+      const h = document.createElement('p'); h.id='blank-hint';
+      h.style.cssText='color:var(--gold-light);font-size:.83rem;margin-top:8px;';
+      h.textContent='Answer: The Whore of Babylon';
+      inp && inp.parentNode.appendChild(h);
+    }
+  }
+  const correct = q.type==='fb' ? isBlankCorrect(myAnswer) : myAnswer===q.a;
+  const fb = document.getElementById('pq-feedback');
+  fb.className = 'fb-box ' + (correct?'fb-right':'fb-wrong');
+  fb.innerHTML = correct
+    ? `<div style="font-size:1.8rem;margin-bottom:6px">🎉</div><div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700">Nailed it!</div><div style="font-size:.82rem;color:rgba(250,243,236,.55);margin-top:4px">Point for you! 🌟</div>`
+    : `<div style="font-size:1.8rem;margin-bottom:6px">😬</div><div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700">Not quite!</div><div style="font-size:.82rem;color:rgba(250,243,236,.55);margin-top:4px">Better luck next question!</div>`;
+  if (correct) spawnConfetti();
+}
+
+async function pollPlayerQ() {
+  const s = await readState();
+  if (!s) return;
+  if (s.phase === 'ended') { stopPoll(); showEnd(s); return; }
+  if (s.phase === 'question' && s.qIndex !== lastQIndex) { stopPoll(); loadPlayerQ(s); return; }
+
+  // Rejoin recovery
+  if (!hasAnswered) {
+    const key = `${myName}__${s.qIndex}`;
+    if (key in (s.answers||{})) { hasAnswered = true; showLocked(s.answers[key]); }
+  }
+
+  // Reveal when host triggers it
+  if (s.revealed && hasAnswered && !hasShownReveal) {
+    hasShownReveal = true;
+    const key = `${myName}__${s.qIndex}`;
+    showReveal(s.answers?.[key] ?? null, Q[s.qIndex]);
+  }
+
+  // Story sync
+  const storyEl = document.getElementById('pq-story');
+  if (s.storyOpen && hasAnswered) {
+    document.getElementById('pq-story-text').textContent = Q[s.qIndex].reveal;
+    storyEl.classList.remove('hidden');
+  } else {
+    storyEl.classList.add('hidden');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  END
+// ─────────────────────────────────────────────
+function showEnd(s) {
+  show('end-screen');
+  const scores = computeScores(s);
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const podiumOrder = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
+  const pClass = ['p-second','p-first','p-third'];
+  const pMedal = ['🥈','🥇','🥉'];
+  document.getElementById('end-podium').innerHTML = podiumOrder.map((p,i)=>`
+    <div style="text-align:center">
+      <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p[0]}</div>
+      <div class="podium-block ${pClass[i]}">
+        <div style="font-size:1.4rem">${pMedal[i]}</div>
+        <div style="font-size:.78rem;color:rgba(250,243,236,.6);margin-top:3px">${p[1]} pts</div>
+      </div>
+    </div>`).join('');
+  renderLB(scores, 'end-lb');
+  spawnConfetti(60);
+}
+
+async function resetGame() {
+  stopPoll();
+  await writeState(defaultState());
+  myRole=null; myName=''; lastQIndex=-1; hasAnswered=false; hasShownReveal=false;
+  show('role-screen');
+}
+</script>
+</body>
+</html>
